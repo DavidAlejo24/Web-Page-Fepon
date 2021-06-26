@@ -1,3 +1,38 @@
+<?php
+//Configuración del algoritmo de encriptación
+
+//Debes cambiar esta cadena, debe ser larga y unica
+//nadie mas debe conocerla
+$clave  = 'FederacionDeEstudiantesDeLaEscuelaPolitecnicaNacional';
+
+//Metodo de encriptación
+$method = 'aes-256-cbc';
+
+// Puedes generar una diferente usando la funcion $getIV()
+$iv = base64_decode("C9fBxl1EWtYTL1/M8jfstw==");
+
+ /*
+ Encripta el contenido de la variable, enviada como parametro.
+  */
+ $encriptar = function ($valor) use ($method, $clave, $iv) {
+     return openssl_encrypt ($valor, $method, $clave, false, $iv);
+ };
+
+ /*
+ Desencripta el texto recibido
+ */
+ $desencriptar = function ($valor) use ($method, $clave, $iv) {
+     $encrypted_data = base64_decode($valor);
+     return openssl_decrypt($valor, $method, $clave, false, $iv);
+ };
+
+ /*
+ Genera un valor para IV
+ */
+ $getIV = function () use ($method) {
+     return base64_encode(openssl_random_pseudo_bytes(openssl_cipher_iv_length($method)));
+ };
+ ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -31,13 +66,21 @@
                 </div>
             </form>
             <?php 
+            $dato = "FEPON";
+
+            //Encripta información:
+            $dato_encriptado = $encriptar($dato);            
+            //echo 'Dato encriptado: '. $dato_encriptado . '<br>';
+            //echo "IV generado: " . $getIV();
+            ?>
+            <?php 
 //            include("conexion.php");
                 include("conexion.php");
                 if (isset($_POST['register']) ){
                     $nombre = $_POST['nombre'];
                     $password = $_POST['contra'];
                     if ($nombre == 'FEPON' && $password == '123456') {
-                        header ("Location: admin.php");
+                        header ("Location: admin.php?usuario=$dato_encriptado");
                                         //mysqli_close(conexion);
                         } else {
                             echo '<label style="background:red;" >Credenciales incorrectos</label>';

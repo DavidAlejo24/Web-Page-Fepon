@@ -1,3 +1,46 @@
+<?php 
+//Configuración del algoritmo de encriptación
+
+//Debes cambiar esta cadena, debe ser larga y unica
+//nadie mas debe conocerla
+$clave  = 'FederacionDeEstudiantesDeLaEscuelaPolitecnicaNacional';
+
+//Metodo de encriptación
+$method = 'aes-256-cbc';
+
+// Puedes generar una diferente usando la funcion $getIV()
+$iv = base64_decode("C9fBxl1EWtYTL1/M8jfstw==");
+
+ /*
+ Encripta el contenido de la variable, enviada como parametro.
+  */
+ $encriptar = function ($valor) use ($method, $clave, $iv) {
+     return openssl_encrypt ($valor, $method, $clave, false, $iv);
+ };
+
+ /*
+ Desencripta el texto recibido
+ */
+ $desencriptar = function ($valor) use ($method, $clave, $iv) {
+     $encrypted_data = base64_decode($valor);
+     return openssl_decrypt($valor, $method, $clave, false, $iv);
+ };
+
+ /*
+ Genera un valor para IV
+ */
+ $getIV = function () use ($method) {
+     return base64_encode(openssl_random_pseudo_bytes(openssl_cipher_iv_length($method)));
+ };
+
+ //Desencripta información:
+  $dato_encriptado = $_GET['usuario'];
+  $dato_desencriptado = $desencriptar($dato_encriptado);
+  //echo 'Dato desencriptado: '. $dato_desencriptado . '<br>';
+  if($dato_desencriptado !="FEPON"){
+    header("Location: login.php");
+  }
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -60,6 +103,8 @@
                 events: 'eventos.php',
                 eventClick: function(info) { //actua sobre los eventos en el calendario
                   //limpiarModal();
+                  $('#imagenEvento').html("");
+                  $('#videoEvento').html("");
                   urlImageActual=""
                   fechaHora= info.event.start.toISOString();
                   var fechaSeparada = fechaHora.split("T");
@@ -79,9 +124,22 @@
                   console.log(info.event.extendedProps.imageurl)
                   if(info.event.extendedProps.imageurl!=""){
                     urlImageActual = info.event.extendedProps.imageurl;
-                    document.getElementById('imagenEvento').src=info.event.extendedProps.imageurl;
-                    console.log("url actual insertado "+urlImageActual);
-                    $('#textoImagenEvento').html('Imagen actual');
+                    urlSeparado=urlImageActual.split(".");
+                    tipoArchivo =urlSeparado[urlSeparado.length - 1]
+                    console.log(tipoArchivo);
+                    if(tipoArchivo=="mp4" || tipoArchivo=="avi"){
+                      //document.getElementById('imagenEvento').src=info.event.extendedProps.imageurl;
+                      
+                      $('#videoEvento').append('<video style="width:100%; max-width:500px; height:100%; max-height:500px;" controls><source src="'+info.event.extendedProps.imageurl+'" type="video/'+tipoArchivo+'"></video>');
+                      console.log("es video")
+                    }else if(tipoArchivo== "jpeg"|| tipoArchivo== "jpeg"|| tipoArchivo== "png"|| tipoArchivo== "gif" || tipoArchivo== "jpg"){
+                      //info.event.extendedProps.imageurl
+                      $('#imagenEvento').html('<div style="text-align:center;"><img style="width:100%; max-width:500px; height:100%; max-height:500px;" src="'+info.event.extendedProps.imageurl+'"></div>');
+                      console.log("es imagen")
+                    }
+                    //document.getElementById('imagenEvento').type="video/mp4";
+                    
+                    $('#textoImagenEvento').html('Archivo actual');
                     $('#btnEliminar_image').html('Borrar');
                     $('#btnEliminar_image').attr("style","background-color:#CD6155 ; color:#F4F6F6;")
                   }else{
@@ -128,6 +186,7 @@
                   document.getElementById('imagenEvento').src="";
             }
             $("#btnAgregar").click(function(){
+    
               if(validarDatos()==true){
                 console.log("validacion de datos aceptada");
                 if(validarImagen()==true){
@@ -145,6 +204,7 @@
             });
             $("#btnModificar_m").click(function(){
               $('#successModal').empty();
+              $('#archivo').empty();
               if(validarDatosModificar()==true){
                 console.log("validacion de datos modificados aceptada");
                 if(validarImagenModificada()=="nuevo"){
@@ -207,40 +267,75 @@
             }
             
             function validarDatos(){
+              var count=0;
               //Verifica que los campos de TITULO y DESCRIPCION tengan texto.
               $("#mensajeTitulo").empty();
               $("#mensajeDescripcion").empty();
+              $('#errorFormato').remove();
+              //$('#archivo').get(0).nextSibling;
+              //$('.flagstrap-icon').get(0).nextSibling.remove()
+              //$('#archivo').empty();
               var title= $("#titulo").val();
               var descripcion= $("#descripcion").val();
-              if( title=="" || descripcion ==""){
                 if(title==""){
                   $("#mensajeTitulo").append("<label style='color:white; background: #c51244 !important; box-shadow: 1px 1px 1px #aaaaaa;'>El titulo es obligatorio</label>");
+                  count++;
                 }
                 if(descripcion==""){
                   $("#mensajeDescripcion").append("<label style='color:white; background: #c51244 !important; box-shadow: 1px 1px 1px #aaaaaa;'>La descripcion es obligatoria</label>");
+                  count++;
                 }
-                return false; 
-                }else{
-                  return true;
-                }
-              //imageurl: "images/stored/"+document.getElementById('archivo').files[0].name
+              
+              if($('#archivo') != ""){
+                var filename = $('#archivo').val().split('\\').pop();
+                urlSeparado=filename.split(".");
+                var tipoArchivo =urlSeparado[urlSeparado.length - 1];
+                if(tipoArchivo== "jpeg"|| tipoArchivo== "jpeg"|| tipoArchivo== "png"|| tipoArchivo== "gif" || tipoArchivo== "jpg"){
+                    console.log("es correcto")
+                    }else{
+                      $('#archivo').after('<label  id="errorFormato" style="color:white; background: #D4AC0D !important; box-shadow: 1px 1px 1px #aaaaaa; margin-top: 10px;"> Solo se aceptan imagenes con formato jpg/jpeg/png/gif</label>');
+                      count++;                
+                    }
+              }
+              if(count==0){
+                return true;
+              }else{
+                return false;
+              }
             }
+              //imageurl: "images/stored/"+document.getElementById('archivo').files[0].name
+            
             function validarDatosModificar(){
               //Verifica que los campos de TITULO y DESCRIPCION tengan texto.
               $("#mensajeTitulo_m").empty();
               $("#mensajeDescripcion_m").empty();
+              $('#errorVideo_m').empty();
               var title= $("#titulo_m").val();
+              var count=0;
               var descripcion= $("#descripcion_m").val();
-              if( title=="" || descripcion ==""){
                 if(title==""){
                   $("#mensajeTitulo_m").append("<label style='color:white; background: #c51244 !important; box-shadow: 1px 1px 1px #aaaaaa;'>El titulo es obligatorio</label>");
+                  count++;
                 }
                 if(descripcion==""){
                   $("#mensajeDescripcion_m").append("<label style='color:white; background: #c51244 !important; box-shadow: 1px 1px 1px #aaaaaa;'>La descripcion es obligatoria</label>");
+                  count++;
                 }
-                return false; 
-                }else{
+                if($('#archivo_m') != ""){
+                var filename = $('#archivo_m').val().split('\\').pop();
+                urlSeparado=filename.split(".");
+                var tipoArchivo =urlSeparado[urlSeparado.length - 1];
+                if(tipoArchivo== "jpeg"|| tipoArchivo== "jpeg"|| tipoArchivo== "png"|| tipoArchivo== "gif" || tipoArchivo== "jpg"){
+                    console.log("es correcto")
+                    }else{
+                      $('#archivo_m').after('<label id="errorVideo_m" style="color:white; background: #D4AC0D !important; box-shadow: 1px 1px 1px #aaaaaa; margin-top: 10px;">  Solo se aceptan imagenes con formato jpg/jpeg/png/gif </label>');
+                      count++;                
+                    }
+                }
+                if(count==0){
                   return true;
+                }else{
+                  return false;
                 }
               //imageurl: "images/stored/"+document.getElementById('archivo').files[0].name
             }
@@ -467,7 +562,7 @@
                     </tr>
                     <?php
                 }
-                ?>
+                ?>  
                 </tbody>
           </table>
           <!--Plugin Table-->
@@ -571,7 +666,8 @@
           <div class="form-group"><label for="descripcion_m">DESCRIPCION </label><div id="mensajeDescripcion_m"></div><textarea type="text" id="descripcion_m" name="descripcion" row="3" class="form-control"></textarea></div>
           <div class="form-group"> <label for="fecha_fin_m">FECHA DE FIN</label><input type="date" id="fecha_fin_m" name="fecha_fin" class="form-control"></div>
           <div class="form-group"><label for="hora_fin_m">HORA DE FIN</label><input type="time" id="hora_fin_m" name="hora_fin" value="07:00" class="form-control"></div>
-          <div class="form-group"><label for="archivo_m">IMAGEN </label> <input type="file" name="archivo" id="archivo_m" class="form-control"><br><img id="imagenEvento" style="width:50%"><br><label id="textoImagenEvento"></label><br><button type="button" class="btn" id="btnEliminar_image"></button></div>
+          <div class="form-group"><label for="archivo_m">IMAGEN </label> <input type="file" name="archivo" id="archivo_m" class="form-control"><br><div  id="imagenEvento"></div><div id="videoEvento"></div>
+<br><label id="textoImagenEvento"></label><br><button type="button" class="btn" id="btnEliminar_image"></button></div>
           
           <div class="form-group"><label for="estilo">COLOR </label><input type="color" value="#fd7e14" id="estilo_m" class="form-control"></div>
           <p id="successModal"></p>                
@@ -645,6 +741,9 @@
         <br>
         <br>
         <button type="button" id="btnAdminEntradas"class="btn btn-primary">Administre sus entradas</button>
+        <br>
+        <br>
+        <button type="button" id="btnAdminEntradaPost"class="btn btn-primary">Conecte con un Evento</button>
       </div>
     </div>
     <div class="col">
@@ -675,6 +774,8 @@
           <div class="form-image-1"><label for="postUrlImageContenido">INSERTE IMAGEN(ES) IMAGEN PARA EL  CONTENIDO POST MAX(3)</label><input type="file" id="postUrlImagenContenidoID" name="postUrlImageContenido[]" placeholder="Ingrese una imagen para el post"row="3" class="form-control" multiple><div id="error-message" ></div></div>
           
             <div class="form-group"> <label for="postUrlImageShow">INSERTE UNA IMAGEN PARA LA EXHIBICION DEL POST </label><input type="file" id="postUrlImagenShowID" name="postUrlImageShow" placeholder="Ingrese una imagen para mostrar en los slider y acceso al post"class="form-control" ><div id="error-image-2"></div></div>
+            <br>
+            <div class="form-group"> <label for="postUrlVideoShow">INSERTE UN VIDEO PARA LA EXHIBICION DEL POST </label><input type="file" id="postUrlVideoShowID" name="postUrlVideoShow" placeholder="Ingrese un video para mostrar en los slider y acceso al post"class="form-control" ><div id="errorVideoPost"></div></div>
             <button  type="button"  id="btnPostAgregar"  class="btn" style="background-color:#1ABC9C; color:#F4F6F6;" >Agregar</button>  
           </form>
           <br>
@@ -737,6 +838,7 @@
                   <div class="form-group" style="font-weight:700;">CONTENIDO <br><label id="contenidoPost" style="font-weight:450; width:100%;"> </label></div>
                   <div class="form-group" style="font-weight:700;">IMAGEN(ES) CONTENIDO <br><label id="imagenContenidoPost" style="font-weight:450; text-align:center;"></label></div>
                   <div class="form-group" style="font-weight:700;">IMAGEN PRINCIPAL <br><label id="imagenTituloPost" style="font-weight:450;  text-align:center;"></label></div>
+                  <div id="videoPostNew"></div>
                   <p id="successModal"></p>
                 </form>
                   <!--
@@ -759,30 +861,81 @@
             </svg> </button>
             <!--Entradas-->
           <script type="text/javascript">
-
+              function irNotificaciones(){
+                console.log("hola mundo")
+                $('#defaultContenido').hide();
+                $('#tablaTodoContenido').hide();
+                $('#tablaNewContenido').show();
+              }
+              function irTodosComentarios(){
+                $('#defaultContenido').hide();
+                $('#tablaNewContenido').hide();
+                $('#tablaTodoContenido').show();
+              }
             document.addEventListener('DOMContentLoaded', function() {
               function sleep (ms) { return new Promise(r => setTimeout(r, ms)); }
               (async function slowDemo () {
                 console.log('Starting slowDemo ...');
-                await sleep(2000);
+                $('#tablaNewContenido').hide();
+                $('#tablaTodoContenido').hide();
+                $('#areaPostEventos').hide();
+                //await sleep(2000);
+                $.ajax({
+                url: 'datoseventos.php?accion=obtenerComentarios',
+                type: 'post',
+                data: { 'id' : 'dato'},
+                contentType: false,
+                processData: false,
+                success: function(response) {
+                  //console.log(response);
+                  var obj = $.parseJSON(response);
+                  var count=0;
+                  for(var i = 0; i< obj.length; i++){ 
+                    if(obj[i]['estado']=='ninguno'){
+                      count++;
+                    }
+                  }
+                  if(count>0){
+                    $('#cajaNotificacion').before('<p>'+count+' nuevo(s) Mensajes <img style="width:12%;"src="images/tenor.gif"></p>')
+                    $('#cajaNotificacion').html('<button name="" id="btnNewNotifies" class="btn btn-primary" onclick="irNotificaciones();">Nuevas Notificaciones</button> <br><br>');
+                  }
+                  
+                }
+                });
                 console.log('slowDemo: TWO seconds later ...');
               })();
+              /*
+
+              */
+
               function limpiarFormPost(){
                   $('#postSegmentoID').val('');
                   $('#postTituloID').val('');
                   $('#postDescripcionID').val('');
                   $('#postUrlImagenContenidoID').val('');
                   $('#postUrlImagenShowID').val('');
+                  $('#errorVideoPost').empty();
+                  $('#postUrlVideoShowID').val('');
+                  $('#postUrlVideoShowID').empty();
+                  
               }
               function obtenerDatos(){
                 //var aleat = entierAleatoire(1, Math.pow(10,9)); //numero aleatorio para imagenes
                 var filename = $('#postUrlImagenShowID').val().split('\\').pop();
+                if($('#postUrlVideoShowID').val() != ""){
+                  filenameVideoCortado = $('#postUrlVideoShowID').val().split('\\').pop();
+                  filenameVideo = 'images/stored/externas/'+ filenameVideoCortado;
+                }else{
+                  filenameVideo = null;
+                }
                 var datos ={
                   segmento: $('#postSegmentoID').val(),
                   titulo : $('#postTituloID').val(),
                   descripcion:$('#postDescripcionID').val(),
-                  urlImagenShow: 'images/stored/externas/'+filename//$('#postUrlImagenShowID').val()
+                  urlImagenShow: 'images/stored/externas/'+filename,//$('#postUrlImagenShowID').val()
+                  urlVideoPrincipal: filenameVideo
                 }
+                console.log(datos);
                 return datos;
               }
             
@@ -797,13 +950,14 @@
                       console.log(msg)
                       agregarImagenShowPost();
                       agregarImagenPost();
+                      agregarVideo();
                       if(msg){
                         console.log("por fin entro en true")  
                       }else{
                         console.log(typeof(msg));
                         $('#mensajeFinal').html("<label style='color:white; text-align: center; background: #c51244 !important; box-shadow: 1px 1px 1px #aaaaaa; margin-top: 10px;'> No se puede enviar el mensaje por el momento</label>");
                       }
-                      //limpiarFormPost();
+                      
                       return msg;
                     },
                     error: function(error) {
@@ -821,6 +975,7 @@
                 $('#formAgregarPost').show();
                 $('#adminPost').hide();
                 $('#defaultPost').hide();
+                $('#areaPostEventos').hide();
               });
               $('#btnAdminEntradas').click(function(){
                 //
@@ -828,6 +983,7 @@
                 $('#formAgregarPost').hide();
                 $('#adminPost').show();
                 $('#defaultPost').hide();
+                $('#areaPostEventos').hide();
                 //location.reload();
               });
               $('#cerrarEntrada').click(function(){
@@ -835,6 +991,14 @@
                 $('#defaultPost').show();
                 $('#formAgregarPost').hide();
                 $('#adminPost').hide();
+                $('#areaPostEventos').hide();
+              });
+              $('#btnAdminEntradaPost').click(function(){
+                
+                $('#formAgregarPost').hide();
+                $('#adminPost').hide();
+                $('#defaultPost').hide();
+                $('#areaPostEventos').show();
               });
               $('#btnPostAgregar').click(function(){
                 var contenido;
@@ -875,7 +1039,24 @@
                   
                 }*/
               }
-
+              function agregarVideo(){
+                let formData = new FormData();
+                if($('#postUrlVideoShowID')[0].files[0] != undefined || $('#postUrlVideoShowID')[0].files[0] != null || $('#postUrlVideoShowID')[0].files[0] != ""){
+                  formData.append('file0',$('#postUrlVideoShowID')[0].files[0]);
+                }
+                $.ajax({
+                      url: 'datoseventos.php?accion=agregarVideoInterno',
+                      type: 'post',
+                      data: formData,
+                      contentType: false,
+                      processData: false,
+                      success: function(response) {
+                        
+                        console.log(response);
+                        
+                      }
+                      });
+              }
               function agregarImagenPost(){
                 $.ajax({
                   url: 'datoseventos.php?accion=obtenerIDPostNuevo',
@@ -944,8 +1125,17 @@
               }
 
               function validarDatosPost(){
+                $('#errorVideoShow').empty();
+                $('#errorMultiimagenes0').empty();
+                $('#errorMultiimagenes1').empty();
+                $('#errorMultiimagenes2').empty();
+                $('#errorMultiimagenes3').empty();
+                $('#errorVideoPost').empty();
+                $('#error-image-2').empty();
                 let bandera = false;
                 let contador = 0;
+
+                console.log(tipoArchivo)
                 if($('#postSegmentoID').val()=="" ){
                   $('#error-segmento').html("<label style='color:white; background: #c51244 !important; box-shadow: 1px 1px 1px #aaaaaa; margin-top: 10px;'> Ingrese un Segmento valido, esto le permitira establecer la ubicacion donde se mostrara el post.</label>")
                     contador++;
@@ -955,6 +1145,44 @@
                 }if($('#postUrlImagenShowID').val()=="" ){
                   $('#error-image-2').html("<label style='color:white; background: #c51244 !important; box-shadow: 1px 1px 1px #aaaaaa; margin-top: 10px;'> Ingrese una imagen, esto le permitira tener una vista previa hacia el contenido del post</label>")
                   contador++;
+                }if($('#postUrlVideoShowID')[0].files[0] != undefined || $('#postUrlVideoShowID')[0].files[0] != null){
+                  var filename = $('#postUrlVideoShowID').val().split('\\').pop();
+                  urlSeparado=filename.split(".");
+                  var tipoArchivo =urlSeparado[urlSeparado.length - 1];
+                  if(tipoArchivo == "mp4" || tipoArchivo == "avi"){
+                    console.log("es correcto")
+                    }else{
+                      console.log($('#postUrlVideoShowID')[0].files[0])
+                      $('#errorVideoPost').html('<label style="color:white; background: #D4AC0D !important; box-shadow: 1px 1px 1px #aaaaaa; margin-top: 10px;"> Solo se aceptan videos con formato mp4 / avi</label>');
+                        contador++;                
+                    }
+                }if($('#postUrlImagenShowID')[0].files[0] != undefined || $('#postUrlImagenShowID')[0].files[0] != null){
+                  var filename = $('#postUrlImagenShowID').val().split('\\').pop();
+                  urlSeparado=filename.split(".");
+                  var tipoArchivo =urlSeparado[urlSeparado.length - 1];
+                  if(tipoArchivo== "jpeg"|| tipoArchivo== "jpeg"|| tipoArchivo== "png"|| tipoArchivo== "gif" || tipoArchivo== "jpg"){
+                    console.log("es correcto")
+                    }else{
+                      console.log($('#postUrlImagenShowID')[0].files[0])
+                      $('#error-image-2').html('<label style="color:white; background: #D4AC0D !important; box-shadow: 1px 1px 1px #aaaaaa; margin-top: 10px;">  Solo se aceptan imagenes con formato jpg/jpeg/png/gif </label>');
+                        contador++;                
+                    }
+                }if($('#postUrlImagenContenidoID') != ""){
+                  // Recorre el input multifile 
+                  var files = document.getElementById("postUrlImagenContenidoID").files; 
+                  for (var i = 0; i < files.length; i++) 
+                  { 
+                  nombre= files[i].name; 
+                  urlSeparado=nombre.split(".");
+                  console.log(urlSeparado);
+                  var tipoArchivo =urlSeparado[urlSeparado.length - 1];
+                    if(tipoArchivo== "jpeg"|| tipoArchivo== "jpeg"|| tipoArchivo== "png"|| tipoArchivo== "gif" || tipoArchivo== "jpg"){
+                      console.log("es correcto")
+                      }else{
+                        $('#postUrlImagenContenidoID').after('<label id="errorMultiimagenes'+i+'" style="color:white; background: #D4AC0D !important; box-shadow: 1px 1px 1px #aaaaaa; margin-top: 10px;">  Solo se aceptan imagenes con formato jpg/jpeg/png/gif </label>');
+                        contador++;                
+                      }
+                  } 
                 }
                 if(contador==0){
                   bandera = true;
@@ -1016,7 +1244,7 @@
                   <div class="form-group"><label for="post_contenido">CONTENIDO</label><input type="text" id="post_contenido" name="post_contenido" placeholder="Ingrese un titulo" class="form-control" ><div id="error-titulo"></div></div>
                   <div class="form-group"><label for="">CAMBIAR IMAGEN(ES) ACTUALMENTE</label> <input type="file" name="post_imagenes_interior" id="post_imagenes_interior" class="form-control" multiple><br><div style="text-align:center;"id="imagenesContenido"></div></div>
                   <div class="form-group"><label for="post_imagen_principal">CAMBIAR IMAGEN PRINCIPAL </label> <input type="file" name="post_imagen_principal" id="post_imagen_principal" class="form-control" ><br><div  style="text-align:center;"><div id="textoImagenPrincipal"></div><br><img id="imagenPrincipal" style="width:50%"><br></div></div>
-
+                  <div id="postVideo"></div>
                   <p id="successModal"></p>
                    
                 </form>
@@ -1045,11 +1273,144 @@
       <br>
       <br>
       </div>
+      <!-- Area Conexion Post Eventos-->
+      <div id="areaPostEventos"style="margin-right:7%; text-align:center; margin-bottom:10% display:block; ">
+        <form >
+        <div class="form-group">
+          <label >Subcategoria&nbsp;&nbsp;</label>
+          <select type="select" class="form-control"  name="inlineFormCustomSelectPref1" title="Seleccione una facultad" aria-describedby="facultadHelp" id="inlineFormCustomSelectPref1">
+            <option selected>Elija la categoria</option>
+            <?php
+              include 'conexion.php';
+              $consulta = "SELECT * FROM subcategorias ";
+              $resultado = mysqli_query( $conexion, $consulta ) or die ( "Algo ha ido mal en la consulta a la base de datos");
+              
+                while ($columna1 = mysqli_fetch_array( $resultado ))
+                {
+                  echo '<option value="'.$columna1['ID'].'">'.$columna1['nombre'].'</option>';
+                }
+              ?>
+          </select>
+          <div id="errorSubcategoria"></div>
+          </div>
+          <div class="form-group">
+          <label >Post&nbsp;&nbsp;</label>
+          <select class="form-control" id="postSelected" name="postSelected" required>
+					<option value="">Elija un Post</option>
+					</select>
+          <div id="errorPostSelected"></div>
+          </div>
+          <hr>
+          <div class="form-group">
+          <label>Evento&nbsp;&nbsp;</label>
+          <select type="select" class="form-control" id="inlineFormCustomSelectPref2" name="inlineFormCustomSelectPref2" required>
+          
+            <option value="">Elija un evento</option>
+            <?php
+              include 'conexion.php';
+              $consulta = "SELECT * FROM eventos ORDER BY ID DESC";
+              $resultado = mysqli_query( $conexion, $consulta ) or die ( "Algo ha ido mal en la consulta a la base de datos");
+              
+                while ($columna1 = mysqli_fetch_array( $resultado ))
+                {
+                  echo '<option value="'.$columna1['ID'].'">'.$columna1['title'].'</option>';
+                }
+              ?>
+          </select>
+          <div id="errorEventoSelected"></div>
+          </div>
+          <button type="button" class="btn btn-primary mb-2" onclick="conectarPostEvento()" >Conectar</button>
+          <div id="mensajeConectar"></div>
+        </form>
+        <br>
+        <br>
+      </div>
       <script type="text/javascript">
        var idModificar;
        var datosModificados;
        var  urlImagenTituloModificar;
+       var urlVideoActual;
+        function conectarPostEvento(){
+          if(validarConectar()){
+            var postContenido =$('#postSelected').val();
+            var eventoContenido =$('#inlineFormCustomSelectPref2').val();
+            console.log(postContenido+"  "+ eventoContenido);
+            datosEmpaquetados={
+              idPost: postContenido,
+              idEvento : eventoContenido
+            }
+            $.ajax({
+            url :"datoseventos.php?accion=conectarEventoPost",
+            type:"POST",
+            cache:false,
+            data: datosEmpaquetados,
+            success:function(data){
+              console.log(data);
+              console.log("exito");
+              $("#mensajeConectar").html('<label style="color:white; text-align: center; background: #2B6C34 !important; box-shadow: 1px 1px 1px #aaaaaa; margin-top: 10px;">Conexion establecida</label>')
+              limpiarTodoForm();
+            //$("#postSelected").html('<option value="'+obj[0]['ID']+'">'+obj[0]['titulo']+'</option>');
+            }
+            });
+          }else{
+            console.log("esta falso");
+          }
+        }
+        function limpiarTodoForm(){
+          $("#errorEventoSelected").empty();
+          $("#errorPostSelected").empty();
+          $('#inlineFormCustomSelectPref2').val("");
+          $('#postSelected').val("");
+        }
+        function validarConectar(){
+          count=0;
+          if($('#postSelected').val() == "" || $('#postSelected').val() == null || $('#postSelected').val() == undefined){
+            $('#errorPostSelected').append('<label style="color:white; background: #c51244 !important; box-shadow: 1px 1px 1px #aaaaaa; margin-top: 10px;">Seleccione un Post </label>');
+            count++;
+          }
+          if($('#inlineFormCustomSelectPref2').val()== "" || $('#inlineFormCustomSelectPref2').val() == null || $('#inlineFormCustomSelectPref2').val() == undefined){
+            $('#errorEventoSelected').append('<label style="color:white; background: #c51244 !important; box-shadow: 1px 1px 1px #aaaaaa; margin-top: 10px;">Seleccione un Evento</label>');
+            count++;
+          }
+          if(count == 0){
+            return true;
+          }else{
+            return false
+          };
+        }
+      $("#inlineFormCustomSelectPref1").on("change",function(){
+        $("#postSelected").empty();
+        var idSubcategoria = $(this).val();
+        $.ajax({
+          url :"datoseventos.php?accion=obtenerPostPorSubcategoria",
+          type:"POST",
+          cache:false,
+          data:{id:idSubcategoria},
+          success:function(data){
+            console.log(data);
+            var obj = $.parseJSON(data);
+            console.log(obj);
+            console.log(obj.length);
+            for(var i = 0; i<= obj.length; i++){
+              if(obj.length == 0){
+                $("#postSelected").append('<option value="">No tiene Post que mostrar</option>');      
+              }else{
+                $("#postSelected").append('<option value="'+obj[i]['ID']+'">'+obj[i]['titulo']+'</option>');
+              }
+            }
+          //$("#postSelected").html('<option value="'+obj[0]['ID']+'">'+obj[0]['titulo']+'</option>');
+          }
+        });
+			});
           function obtenerDatosPostModificarForm(){
+            var videoFile =$('#post_video_principal').val().split('\\').pop();
+            /*
+            if( $('#post_video_principal').val() != ""){
+              urlVideoPrincipal = "images/stored/externas/"+videoFile;
+            }else{
+              urlVideoPrincipal = null
+            }
+            */
             //console.log($('#post_imagen_principal').val());
             if( $('#post_imagen_principal').val()=="" || $('#post_imagen_principal').val()==null){
               console.log("la imagen principal no ha cambiado");
@@ -1070,8 +1431,42 @@
                   processData: false,
                   success: function(response) {
                     console.log(response);
-                    //var datosModificados = obtenerDatosPostModificarForm();
-                    //urlImageActual = response;
+
+                  }
+              });
+            }
+            if( $('#post_video_principal').val()=="" || $('#post_video_principal').val()==null){
+              console.log("El video principal no ha cambiado");
+              //urlVideoActual = urlVideoActual;
+              
+            }else{
+              console.log("el video actual es" +urlVideoActual)
+              $.ajax({
+                  url: 'datoseventos.php?accion=eliminarVideoInterno',
+                  type: 'post',
+                  data: {
+                    urlVideoPost: urlVideoActual
+                  },
+                  success: function(response) {
+                    console.log(response);
+                    console.log("borrado y listo para subir la nuevo video")
+                  }
+              });
+              var filenameVideo = $('#post_video_principal').val().split('\\').pop();
+              urlVideoActual = "images/stored/externas/"+filenameVideo;
+              var formData = new FormData();
+              var files = $('#post_video_principal')[0].files[0];
+              //console.log($('#postUrlImagenShowID')[0].files[0]);
+              formData.append('file0',files);
+              $.ajax({
+                  url: 'datoseventos.php?accion=agregarVideoInterno',
+                  type: 'post',
+                  data: formData,
+                  contentType: false,
+                  processData: false,
+                  success: function(response) {
+                    console.log(response);
+                    $('#videoPrincipal').attr('src',urlVideoActual)
                   }
               });
             }
@@ -1081,6 +1476,7 @@
               descripcion: $('#post_contenido').val(),
               urlImagenTitulo: urlImagenTitulo,
               subcategoriaID: $('#post_segmento').val(),
+              urlVideoPrincipal: urlVideoActual
             }
             return datosForm
           }
@@ -1106,7 +1502,7 @@
               
             }*/
           }
-          $('#btnPostModificar').click(function(){
+          $('#btnPostModificar').click(function(){          
                 if(validarEntradaModificada()){
                   datosModificados = obtenerDatosPostModificarForm();
                   var listaObtenida;
@@ -1116,7 +1512,7 @@
                         data: datosModificados,
                         success: function(response) { 
                           console.log(response)
-                          if(response == "true"){
+                          if(response){
                             if(verificarMultiplesImagenes()){
                               $.ajax({  
                                 type: 'POST',
@@ -1223,7 +1619,6 @@
                                     data: datosModificados,
                                     success: function(msg) {
                                       console.log(msg);
-                                      console.log("nueva imagen principal colocada");
                                       var obj = $.parseJSON(msg);
                                       console.log(obj[0]['ID']);
                                       var size = Object.keys(obj).length;
@@ -1254,18 +1649,6 @@
                               }
                     }); 
                 }
-                
-
-                //borrarDatosForm();
-                /*
-                if(validarDatosPost()){
-                  contenido =obtenerDatos();
-                  agregarPost(contenido);
-                  
-                  
-                  //console.log(contenido);
-                }
-                */
           });
           function verificarMultiplesImagenes(){
             var respuesta;
@@ -1278,7 +1661,16 @@
             return respuesta
           }
           function validarEntradaModificada(){
+            
+            $('#mensajeUpdatePost').empty();
+            $('#errorImagenShow').empty();
+            $('#textoVideoPrincipal').empty();
+            $('#errorMultiimagenesUpdate0').empty();
+            $('#errorMultiimagenesUpdate1').empty();
+            $('#errorMultiimagenesUpdate2').empty();
+            
             let count=0;
+
             if($('#post_titulo').val()=="" ||   $('#post_segmento').val()==null){
               $('#error-titulo-modif').append('<p style="color:white; background: #c51244 !important; box-shadow: 1px 1px 1px #aaaaaa; margin-top: 10px;">El titulo es obligatorio</p>')
               count++
@@ -1287,6 +1679,63 @@
               $('#error-segmento-modif').append('<p style="color:white; background: #c51244 !important; box-shadow: 1px 1px 1px #aaaaaa; margin-top: 10px;">El segmento es obligatorio</p>')
               count++
             }
+            if($('#post_video_principal')[0].files[0] != undefined || $('#post_video_principal')[0].files[0] != null || $('#post_video_principal').val() ){
+              var filename = $('#post_video_principal').val().split('\\').pop();
+                urlSeparado=filename.split(".");
+                var tipoArchivo =urlSeparado[urlSeparado.length - 1];
+                console.log("se detecto video principal")
+                console.log(tipoArchivo)
+                  if(tipoArchivo == "mp4" || tipoArchivo == "avi"){
+                    console.log("es correcto")
+                    }else{
+                      console.log($('#postUrlVideoShowID')[0].files[0])
+                      $('#textoVideoPrincipal').html('<label style="color:white; background: #D4AC0D !important; box-shadow: 1px 1px 1px #aaaaaa; margin-top: 10px;"> Solo se aceptan videos con formato mp4 / avi</label>');
+                        count++;                
+                    }
+            }else if($('#post_video_principal')[0].files[0] == ""){
+                  console.log("mantener video actual");
+                }
+            if($('#post_imagen_principal').val() != ""){
+              var filename = $('#post_imagen_principal').val().split('\\').pop();
+                urlSeparado=filename.split(".");
+                var tipoArchivo =urlSeparado[urlSeparado.length - 1];
+                console.log("se detecto imagen principal")
+                console.log(tipoArchivo)
+                var tipoArchivo =urlSeparado[urlSeparado.length - 1];
+                if(tipoArchivo== "jpeg"|| tipoArchivo== "jpeg"|| tipoArchivo== "png"|| tipoArchivo== "gif" || tipoArchivo== "jpg"){
+                    console.log("es correcto")
+                    }else{
+                      $('#post_imagen_principal').after('<label id="errorImagenShow" style="color:white; background: #D4AC0D !important; box-shadow: 1px 1px 1px #aaaaaa; margin-top: 10px;">  Solo se aceptan imagenes con formato jpg/jpeg/png/gif </label>');
+                      count++;                
+                    }
+              }else if($('#post_imagen_principal')[0].files[0] == ""){
+                  console.log("mantener imagen principal actual");
+                }
+          if($('#post_imagenes_interior').val() != ""){
+            var filename = $('#post_imagenes_interior').val().split('\\').pop();
+                urlSeparado=filename.split(".");
+                var tipoArchivo =urlSeparado[urlSeparado.length - 1];
+                console.log("se detecto imagenes interior")
+                console.log(tipoArchivo)
+                  // Recorre el input multifile 
+                  var files = document.getElementById("post_imagenes_interior").files; 
+                  for (var i = 0; i < files.length; i++) 
+                  { 
+                  nombre= files[i].name; 
+                  urlSeparado=nombre.split(".");
+                  console.log(urlSeparado);
+                  var tipoArchivo =urlSeparado[urlSeparado.length - 1];
+                    if(tipoArchivo== "jpeg"|| tipoArchivo== "jpeg"|| tipoArchivo== "png"|| tipoArchivo== "gif" || tipoArchivo== "jpg"){
+                      console.log("es correcto")
+                      }else{
+                        $('#post_imagenes_interior').after('<label id="errorMultiimagenesUpdate'+i+'" style="color:white; background: #D4AC0D !important; box-shadow: 1px 1px 1px #aaaaaa; margin-top: 10px;">  Solo se aceptan imagenes con formato jpg/jpeg/png/gif </label>');
+                        count++;                
+                      }
+                  } 
+                }else if($('#post_imagenes_interior')[0].files[0] == ""){
+                  console.log("mantener video actual");
+                }
+                
             if(count==0){
               return true;
             }else{
@@ -1343,6 +1792,36 @@
                   },
                   success: function(response) { 
                     console.log(response);
+                    return true;
+                  },error: function(error) {
+                    return false;
+                  }
+                }); 
+              },error: function(error) {
+                return false;
+              }
+            }); 
+          }
+          function eliminarVideoPrincipal(comp){
+            $.ajax({  
+              type: 'POST',
+              url: 'datoseventos.php?accion=obtenerPost',
+              data: {
+                id: comp.value
+              },
+              success: function(response) { 
+                console.log(response);
+                var obj = $.parseJSON(response);
+                //console.log(obj[0]['ID']);                
+                $.ajax({  
+                  type: 'POST',
+                  url: 'datoseventos.php?accion=eliminarVideoInterno',
+                  data: {
+                    urlVideoPost : obj[0]['urlVideoPrincipal']
+                  },
+                  success: function(response) { 
+                    console.log(response);
+                    console.log("video borrado exitosamente");
                     return true;
                   },error: function(error) {
                     return false;
@@ -1415,6 +1894,7 @@
             //console.log(eliminarFilesImagenesContenido(comp));
             eliminarFilesImagenesContenido(comp);
             eliminarFileImagenPrincipal(comp);
+            eliminarVideoPrincipal(comp);
             eliminarRegistroImagenes(comp);
             eliminarRegistro(comp);
             console.log("entrada eliminada exitosamente"); 
@@ -1437,6 +1917,7 @@
               $('#modalContenidoPost').modal('show');
           }
           function obtenerDatosPostModificar(idEntrada){
+            $('#postVideo').empty();
             $.ajax({  
                 type: 'POST',
                 url: 'datoseventos.php?accion=obtenerPost',
@@ -1450,8 +1931,15 @@
                     $('#post_segmento').val(obj[0]['subcategoriaID']);
                     $('#post_titulo').val(obj[0]['titulo']);
                     $('#post_contenido').val(obj[0]['descripcion']);
+                    urlVideoActual =obj[0]['urlVideoPrincipal']
                     //$('#imagenesContenido').val();Imagen Principal Actual
                     $('#imagenPrincipal').attr("src",obj[0]['urlImagenTitulo']);
+                    if(obj[0]['urlVideoPrincipal'] != null){
+                    $('#postVideo').append('<div class="form-group"><label for="post_imagen_principal">CAMBIAR VIDEO PRINCIPAL </label> <input type="file" name="post_video_principal" id="post_video_principal" class="form-control" ><br><div  style="text-align:center;"><div id="textoVideoPrincipal"></div><br><video id="videoPrincipal" src="'+obj[0]['urlVideoPrincipal']+'" style="width:50%" controls><br></div></div>');  
+                    }else{
+                      console.log("No ha un video actualmente");
+                    }
+                    
                     $('#textoImagenPrincipal').append("<br><p style='background-color:#2B2B2B; color:white;'>Imagen Principal Actualmente</p>");
                     $.ajax({  
                         type: 'POST',
@@ -1487,10 +1975,9 @@
                 },
                 success: function(response) { 
                     let formData = new FormData();
-                    // formData.append('file0',$('#postUrlImagenContenidoID')[0].files[0]);
                     console.log(response);
                     var obj = $.parseJSON(response);
-                    console.log(obj[0]['ID']);
+                    console.log(obj[0]['urlVideoPrincipal']);
                     idDato=obj[0]['ID'];//parseInt(obj[0]['ID'])
                     $('#fechaPost').append('<br><label style="width:100%">'+obj[0]['fechaCreacion']+'</label>');
                     $('#tituloPost').append('<br><label style="width:100%">'+obj[0]['titulo']+'</label>');
@@ -1498,6 +1985,9 @@
                       $('#contenidoPost').append('<br><label style="width:100%">'+obj[0]['descripcion']+'</label>');
                     }else{
                       $('#contenidoPost').append('<br><label>'+"No contiene ningun contenido almacenado"+'</label>');
+                    }
+                    if(obj[0]['urlVideoPrincipal'] !=null){
+                      $('#videoPostNew').append('<div class="form-group" style="font-weight:700;"> VIDEO ACTUAL <br><label id="imagenTituloPost" style="font-weight:450;  text-align:center;"></label><video style="width:100%; max-width:500px; height:100%; max-height:500px;" src="'+obj[0]['urlVideoPrincipal']+'" controls></div>');
                     }
                     formData.append('id', obj[0]['ID']);
                     $.ajax({
@@ -1532,6 +2022,8 @@
             $('#fechaPost').empty();
             $('#tituloPost').empty();
             $('#contenidoPost').empty();
+            $('#videoPostNew').empty();
+            
             $('#imagenContenidoPost').empty();
             $('#imagenContenidoPost').empty();
             $('#imagenTituloPost').empty();
@@ -1597,10 +2089,223 @@
   </div>
   <br>
   <div class="row">
-    <div class="col">
-    <i class="fas fa-h3" style="text-align:center;">Comentarios Recibidos </i>
+    <div class="col-4">
+    <div id="cajaNotificacion">
+      </div>
+      <button name="" id="btnNewNotifies" class="btn btn-primary" onclick="irTodosComentarios();">Mensajes Recibidos</button>
+    <br>
+    </div>
+    <div class="col" style="text-align:center;">
+    <div id="defaultContenido">
+      <i class="fas fa-h3" style="text-align:center;">Aqui podras administrar los comentarios de todos los post </i><br>
+      <i class="fas fa-h3" style="text-align:center;">El boton "Nuevas notificaciones" solo aparecera cuando haya nuestros mensajes </i>
+      <br>
+      <br>
+      <img style="width:20%;" src="images/escribiendo.gif" alt="">
+      </div>
+      
+    </div>
+    <br>
+    <br>
+    <br>
+    <div id="tablaNewContenido" style=" width:100%; margin-left:1%; margin-right:6%;">
+    <br>
+    <i class="fas fa-h3" style="text-align:center; margin-left:2%;">Elija una opción para el comentario</i><br>
+    <br>
+
+      <table class="table table-striped table-inverse table-responsive" style=" margin-left:3%; margin-right:3%;">
+        <thead class="thead-inverse">
+          <tr>
+            <th>Fecha Creacion</th>
+            <th>Nombre</th>
+            <th>Correo</th>
+            <th>Tema</th>
+            <th>Mensaje</th>
+            <th>Publicar</th>
+            <th>Ocultar</th>
+            <th>Eliminar</th>
+          </tr>
+          </thead>
+          <tbody>
+            <?php
+                //Consulta los mensajes y los inserta en la tabla de mensajes - Tambien conecta el boton eliminar con cada ID de mensaje
+                //$sql = "SELECT M.nombre, M.correo, M.asunto, M.mensaje, F.Nombre_facu, C.Nombre_carrera FROM mensajes M JOIN  facultades F ON M.facultadID = F.ID JOIN carreras C ON M.carreraID = C.ID";
+                $consulta = "SELECT C.ID, C.nombre, C.correo, C.mensaje, C.estado, C.fechaCreacion, E.titulo FROM comentarios C  JOIN entradas E ON (C.entradaID = E.ID)  WHERE (estado='ninguno')";
+                $resultado = mysqli_query( $conexion, $consulta ) or die ( "Algo ha ido mal en la consulta a la base de datos");
+                while($row = mysqli_fetch_array($resultado)){ ?>
+                    <tr id="filaComentarioNew<?php echo $row['ID'];?>">
+                        <td><?php echo $row['fechaCreacion'] ?></td>
+                        <td><?php echo $row['nombre'] ?></td>
+                        <td><?php echo $row['correo'] ?></td>
+                        <td><?php echo $row['titulo'] ?></td>
+                        <td><?php echo $row['mensaje'] ?></td>
+                        <td><button class="btn btn-success" type="button" value="<?php echo $row['ID'] ?>"  onclick="mostrarMsj(this)" > Publico</button></td>
+                        <td><button class="btn btn-warning" type="button" value="<?php echo $row['ID'] ?>" onclick="ocultarMsj(this);"> Privado</button></td>
+                        <td><button class="btn btn-danger" type="button" value="<?php echo $row['ID'] ?>" onclick="eliminarMsj(this);"> Eliminado</button></td>
+                    </tr>
+                    <?php
+                }
+                ?> 
+          </tbody>
+      </table>
+      <br>
+      <br>
+    </div>
+    <div id="tablaTodoContenido" style=" width:100%; margin-left:1%; margin-right:6%;">
+    <table class="table table-striped table-inverse table-responsive" id="tablaComentariosTodo" style=" margin-left:3%; margin-right:3%;">
+        <thead class="thead-inverse">
+          <tr>
+            <th>Fecha Creacion</th>
+            <th>Nombre</th>
+            <th>Correo</th>
+            <th>Titulo</th>
+            <th>Comentario</th>
+            <th>Estado Actual</th>
+            <th>Cambiar Estado</th>
+            <th>Borrar</th>
+          </tr>
+          </thead>
+          <tbody>
+            <?php
+                //Consulta los mensajes y los inserta en la tabla de mensajes - Tambien conecta el boton eliminar con cada ID de mensaje
+                //$sql = "SELECT M.nombre, M.correo, M.asunto, M.mensaje, F.Nombre_facu, C.Nombre_carrera FROM mensajes M JOIN  facultades F ON M.facultadID = F.ID JOIN carreras C ON M.carreraID = C.ID";
+                $consulta = "SELECT C.ID, C.nombre, C.correo, C.mensaje, C.estado, C.fechaCreacion, E.titulo FROM comentarios C  JOIN entradas E ON (C.entradaID = E.ID)";
+                $resultado = mysqli_query( $conexion, $consulta ) or die ( "Algo ha ido mal en la consulta a la base de datos");
+                while($row = mysqli_fetch_array($resultado)){ ?>
+                    <tr id="filaComentarioTodo<?php echo $row['ID'];?>">
+                        <td><?php echo $row['fechaCreacion'] ?></td>
+                        <td><?php echo $row['nombre'] ?></td>
+                        <td><?php echo $row['correo'] ?></td>
+                        <td><?php echo $row['titulo'] ?></td>
+                        <td><?php echo $row['mensaje'] ?></td>
+                        <td><?php echo $row['estado'] ?></td>
+                        
+                        <td><select id="estadoNuevo" class="form-select" aria-label="Default select example">
+                            <option selected>Selecciona otro estado</option>
+                            <option value="show">Mostrar</option>
+                            <option value="ocultar">Ocultar</option>
+                          </select>
+                        <button class="btn btn-success" type="button" value="<?php echo $row['ID'] ?>"  onclick="cambiarMsj(this)" > Cambiar</button></td>
+                        <td><button class="btn btn-danger" type="button" value="<?php echo $row['ID'] ?>"  onclick="eliminarMsjTabla(this)" > Eliminar</button></td>
+                    </tr>
+                    <?php
+                }
+                ?> 
+          </tbody>
+      </table>
     </div>
   </div>
+  <br>
+    <script type="text/javascript">
+        $('#tablaComentariosTodo').DataTable({
+          "language": {
+              "lengthMenu": "Mostrar _MENU_ registros",
+              "zeroRecords": "No se encontraron resultados",
+              "info": "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+              "infoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
+              "infoFiltered": "(filtrado de un total de _MAX_ registros)",
+              "sSearch": "Buscar:",
+              "oPaginate": {
+                  "sFirst": "Primero",
+                  "sLast":"Último",
+                "sNext":"Siguiente",
+                  "sPrevious": "Anterior"
+        },
+        "sProcessing":"Procesando...",
+          },
+          responsive: true, 
+          "order": [[ 0, "desc" ]]
+    });
+     function cambiarMsj(comp){
+       otroEstado =$('#estadoNuevo').val();
+       if(otroEstado=="show"){
+         $.ajax({
+            url: 'datoseventos.php?accion=updateComentario',
+            type: 'post',
+            data: {
+              idComentario : comp.value,
+              estado: otroEstado
+            },
+            success: function(response) {
+              console.log(response)
+              $("#tablaTodoContenido").load(" #tablaComentariosTodo");
+            }
+          });
+       }else if(otroEstado=="ocultar"){
+        console.log("2");
+        $.ajax({
+            url: 'datoseventos.php?accion=updateComentario',
+            type: 'post',
+            data: {
+              idComentario : comp.value,
+              estado: otroEstado
+            },
+            success: function(response) {
+              console.log(response)
+              $("#tablaTodoContenido").load(" #tablaComentariosTodo");
+            }
+          });
+       }else{
+        console.log("No hace nd");
+       }
+     }
+    function mostrarMsj(comp){
+      $.ajax({
+        url: 'datoseventos.php?accion=updateMensaje',
+        type: 'post',
+        data: {
+          idComentario : comp.value
+        },
+         success: function(response) {
+           console.log(response)
+           $('#filaComentarioNew'+comp.value).css("background-color", "green");
+            $('#filaComentarioNew'+comp.value).html("Entrada Publicada")
+        }
+      });
+    }
+    function ocultarMsj(comp){
+      $.ajax({
+        url: 'datoseventos.php?accion=ocultarMensaje',
+        type: 'post',
+        data: {
+          idComentario : comp.value
+        },
+         success: function(response) {
+           console.log(response)
+           $('#filaComentarioNew'+comp.value).css("background-color", "yellow");
+            $('#filaComentarioNew'+comp.value).html("Entrada Ocultada")
+        }
+      });
+    }
+    function eliminarMsjTabla(comp){
+      $.ajax({
+        url: 'datoseventos.php?accion=eliminarMensaje',
+        type: 'post',
+        data: {
+          idComentario : comp.value
+        },
+         success: function(response) {
+           console.log(response)
+           $("#tablaTodoContenido").load(" #tablaComentariosTodo");
+        }
+      });
+    }
+    function eliminarMsj(comp){
+      $.ajax({
+        url: 'datoseventos.php?accion=eliminarMensaje',
+        type: 'post',
+        data: {
+          idComentario : comp.value
+        },
+         success: function(response) {
+           console.log(response)
+           $('#filaComentarioNew'+comp.value).css("background-color", "red");
+            $('#filaComentarioNew'+comp.value).html("Entrada Eliminada")
+        }
+      });
+    }
+    //document.addEventListener("DOMContentLoaded", getComentarios, false);
+    </script>
 </section>
 <br>
 <br>
@@ -1609,6 +2314,7 @@
 </body>
 
 </html>
+
 
 
 

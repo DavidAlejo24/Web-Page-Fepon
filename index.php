@@ -45,15 +45,15 @@
 				<div id="navbar" class="collapse navbar-collapse">
 					<ul class="nav navbar-nav">
 						<li class="active"><a href="http://127.0.0.1:8080/renda-FEPON-project/">Inicio</a></li>
-						<li><a href="#about">Noticias</a></li>
-						<li><a href="about.html">Preguntas Frecuentes</a></li>
-						<li><a href="#contact">PoliSegura</a></li>
+						<li><a href="catalogo.php?ID=4">Noticias</a></li>
+						<li><a href="preguntasGenerales.php">Preguntas Frecuentes</a></li>
+						<li><a href="poliSegura.php">PoliSegura</a></li>
 					</ul>
 
 					<ul class="nav navbar-nav navbar-right">
-						<li><a href="#"><i class="fa fa-facebook"></i></a></li>
-						<li><a href="#"><i class="fa fa-twitter"></i></a></li>
-						<li><a href="#"><i class="fa fa-instagram"></i></a></li>
+						<li><a href="https://www.facebook.com/fepon.epn" target="_blank"><i class="fa fa-facebook"></i></a></li>
+						<li><a href="https://www.youtube.com/c/FEPON/videos" target="_blank"><i class="fa fa-youtube"></i></a></li>
+						<li><a href="https://www.instagram.com/fepon.epn/?hl=es" target="_blank"><i class="fa fa-instagram"></i></a></li>
 					</ul>
 
 				</div>
@@ -69,13 +69,19 @@
 			</header>
 		<div class="container">
 
-
-
-		<section class="main-slider">
+		<section class="main-slider" >
 			<ul class="bxslider">
-				<li><div class="slider-item"><img src="images/polisegura.jpg" title="Funky roots" /><h2><a href="post.html" title="Vintage-Inspired Finds for Your Home">Vintage-Inspired Finds for Your Home</a></h2></div></li>
-				<li><div class="slider-item"><img src="images/portada2.jpeg" title="Funky roots" /><h2><a href="post.html" title="Vintage-Inspired Finds for Your Home">Vintage-Inspired Finds for Your Home</a></h2></div></li>
-				<li><div class="slider-item"><img src="images/portada3.jpeg" title="Funky roots" /><h2><a href="post.html" title="Vintage-Inspired Finds for Your Home">Vintage-Inspired Finds for Your Home</a></h2></div></li>
+			<?php
+				include 'conexion.php';
+                //Inserta los ultimos 4 noticias Comunidad Politecnica
+                //$sql = "SELECT M.nombre, M.correo, M.asunto, M.mensaje, F.Nombre_facu, C.Nombre_carrera FROM mensajes M JOIN  facultades F ON M.facultadID = F.ID JOIN carreras C ON M.carreraID = C.ID";
+                $consulta = "SELECT * FROM entradas WHERE subcategoriaID = 3 ORDER BY ID DESC LIMIT 4";
+                $resultado = mysqli_query( $conexion, $consulta ) or die ( "Algo ha ido mal en la consulta a la base de datos");
+                while($row = mysqli_fetch_array($resultado)){ ?>
+					<li><div class="slider-item"><img style=" float: right; width:100% max-width: 1140px; height:100%; max-height: 500px;" src="<?php echo $row['urlImagenTitulo'] ?>" title="Funky roots" /><h2><a href="post.php?ID=<?php echo $row['ID'] ?>" title="Vintage-Inspired Finds for Your Home"><?php echo $row['titulo'] ?></a></h2></div></li>
+                    <?php
+                }
+                ?>
 			</ul>
 		</section>
 		<section>
@@ -92,7 +98,12 @@
 							<div class="modal-body">
 							<label id="fechaEvento"></label>
 							<p id="descripcionEvento"></p>
-							<img style="width:100%; height:100%"id="imagenEvento"> 
+							<div style="text-align:center;">
+							<div id="imagenEvento"></div>
+							<div id="videoEvento"></div>
+							
+							</div>
+							
 							<!--
 							<p id="descripcionEvento"></p>
 							<img id="imagenEvento" style="width:100%">
@@ -100,51 +111,38 @@
 
 							</div>
 							<div style="text-align:center;"class="modal-footer">
-							<button type="button" class="btn" id="btnModificar_m" style="background-color:#2B6C34 !important; color:#F4F6F6;">Informate</button>   
-							<button type="button" class="btn btn-secondary" id="btnAgregar_m" data-dismiss="modal"  onclick="$('#exampleModal').modal('toggle');">Cerrar</button>
+							<div id="dirigeteEvento" style="float:left;"></div>
+							<button type="button"  style="float:right;" class="btn btn-secondary" id="btnAgregar_m" data-dismiss="modal"  onclick="$('#exampleModal').modal('toggle');">Cerrar</button>
 						</div>
 					</div>
 				</div>
 			</div>
 				</br>
 				</br>
-				<h3 class="sidebar-title">Noticias</h3>
-					<article class="blog-post">
-						<div class="blog-post-image">
-							<a href="post.html"><img src="images/afiche_ayuda_economica.png" alt=""></a>
-						</div>
-						<div class="blog-post-body">
-							<h2><a href="post.html">Ayudas Económicas</a></h2>
-							<div class="post-meta"><span>por <a href="#">Jamie Mooze</a></span>|<span><i class="fa fa-clock-o"></i>26/05/2021-5:15:39</span>|<span><i class="fa fa-comment-o"></i> <a href="#">343</a></span></div>
-							<p>La ayuda económica es un apoyo no reembolsable que se otorga a estudiantes que cumplan las siguientes condiciones, todas asociadas a la pandemia del COVID-19 y al período académico 2021-A</p>
-							<div class="read-more"><a href="#">Continue Reading</a></div>
-						</div>
-					</article>
+				<h3 class="sidebar-title">Noticias Comunidad Politecnica</h3>
+				
+				<?php
+				include 'conexion.php';
+                //Inserta los ultimos 4 noticias Comunidad Politecnica
+                //$sql = "SELECT M.nombre, M.correo, M.asunto, M.mensaje, F.Nombre_facu, C.Nombre_carrera FROM mensajes M JOIN  facultades F ON M.facultadID = F.ID JOIN carreras C ON M.carreraID = C.ID";
+                $consulta = "SELECT * FROM entradas WHERE subcategoriaID = 3 ORDER BY ID DESC LIMIT 4";
+                $resultado = mysqli_query( $conexion, $consulta ) or die ( "Algo ha ido mal en la consulta a la base de datos");
+                while($row = mysqli_fetch_array($resultado)){ ?>
 					<!-- article -->
 					<article class="blog-post">
-						<div class="blog-post-image">
-							<a href="post.html"><img src="images/750x500-2.jpg" alt=""></a>
+						<div class="blog-post-image" style="text-align:center;">
+							<a href="post.php?ID=<?php $idActual =$row['ID']; echo $row['ID'] ?>"><img src="<?php echo $row['urlImagenTitulo'] ?>" alt=""></a>
 						</div>
 						<div class="blog-post-body">
-							<h2><a href="post.html">The Best Street Style Looks of London Fashion Week</a></h2>
-							<div class="post-meta"><span>by <a href="#">Jamie Mooze</a></span>/<span><i class="fa fa-clock-o"></i>March 14, 2015</span>/<span><i class="fa fa-comment-o"></i> <a href="#">343</a></span></div>
-							<p>Few months ago, we found ridiculously cheap plane tickets for Boston and off we went. It was our first visit to the city and, believe it or not, Stockholm in February was more pleasant than Boston in March. It probably has a lot to do with the fact that we arrived completely unprepared.</p>
-							<div class="read-more"><a href="#">Continue Reading</a></div>
+							<h2><a href="post.php?ID=<?php echo $row['ID'] ?>"><?php echo $row['titulo'] ?></a></h2>
+							<div class="post-meta"><span><i class="fa fa-clock-o"></i><?php echo $row['fechaCreacion'] ?></span></div>
+							<p><?php echo $resultado1 = substr($row['descripcion'], 0, 175)?>....</p>
+							<div class="read-more"><a type="button" href="post.php?ID=<?php echo $row['ID'] ?>">Continuar Leyendo</a></div>
 						</div>
 					</article>
-					<!-- article -->
-					<article class="blog-post">
-						<div class="blog-post-image">
-							<a href="post.html"><img src="images/750x500-3.jpg" alt=""></a>
-						</div>
-						<div class="blog-post-body">
-							<h2><a href="post.html">Front Row Style: Our Favorite A-List Moments of Fashion Week</a></h2>
-							<div class="post-meta"><span>by <a href="#">Jamie Mooze</a></span>/<span><i class="fa fa-clock-o"></i>March 14, 2015</span>/<span><i class="fa fa-comment-o"></i> <a href="#">343</a></span></div>
-							<p>It was our first visit to the city and, believe it or not, Stockholm in February was more pleasant than Boston in March. It probably has a lot to do with the fact that we arrived completely unprepared. Few months ago, we found ridiculously cheap plane tickets for Boston and off we went.</p>
-							<div class="read-more"><a href="#">Continue Reading</a></div>
-						</div>
-					</article>
-
+                    <?php
+                }
+                ?>
 				</div>
 				<div class="col-md-4 sidebar-gutter">
 					<aside>
@@ -162,61 +160,28 @@
 					<div class="sidebar-widget">
 						<h3 class="sidebar-title">Ultimas noticias e informacion</h3><!--Ultimas noticias e informacion-->
 						<div class="widget-container">
-							<article class="widget-post">
-								<div class="post-image">
-									<a href="post.html"><img src="images/90x60-1.jpg" alt=""></a>
-								</div>
-								<div class="post-body">
-									<h2><a href="post.html">The State of the Word 2014</a></h2>
-									<div class="post-meta">
-										<span><i class="fa fa-clock-o"></i> 2. august 2015</span> <span><a href="post.html"><i class="fa fa-comment-o"></i> 23</a></span>
+						<?php
+							include 'conexion.php';
+							//Inserta los ultimos 4 noticias Comunidad Politecnica
+							//$sql = "SELECT M.nombre, M.correo, M.asunto, M.mensaje, F.Nombre_facu, C.Nombre_carrera FROM mensajes M JOIN  facultades F ON M.facultadID = F.ID JOIN carreras C ON M.carreraID = C.ID";
+							$consulta = "SELECT * FROM entradas ORDER BY ID DESC LIMIT 5";
+							$resultado = mysqli_query( $conexion, $consulta ) or die ( "Algo ha ido mal en la consulta a la base de datos");
+							while($row = mysqli_fetch_array($resultado)){ ?>
+								<!-- article -->
+								<article class="widget-post">
+									<div class="post-image">
+										<a href="post.php?ID=<?php echo $row['ID'] ?>"><img src="<?php echo $row['urlImagenTitulo'] ?>" alt=""></a>
 									</div>
-								</div>
-							</article>
-							<article class="widget-post">
-								<div class="post-image">
-									<a href="post.html"><img src="images/90x60-2.jpg" alt=""></a>
-								</div>
-								<div class="post-body">
-									<h2><a href="post.html">Why The Muppets Needs to Channel 30 Rock</a></h2>
-									<div class="post-meta">
-										<span><i class="fa fa-clock-o"></i> 2. august 2015</span> <span><a href="post.html"><i class="fa fa-comment-o"></i> 23</a></span>
+									<div class="post-body">
+										<h2><a href="post.php?ID=<?php echo $row['ID'] ?>"><?php echo $row['titulo'] ?></a></h2>
+										<div class="post-meta">
+											<span><i class="fa fa-clock-o"></i><?php echo $row['fechaCreacion'] ?></span> <span><a href="post.html"></span>
+										</div>
 									</div>
-								</div>
-							</article>
-							<article class="widget-post">
-								<div class="post-image">
-									<a href="post.html"><img src="images/90x60-3.jpg" alt=""></a>
-								</div>
-								<div class="post-body">
-									<h2><a href="post.html">The State of the Word 2014</a></h2>
-									<div class="post-meta">
-										<span><i class="fa fa-clock-o"></i> 2. august 2015</span> <span><a href="post.html"><i class="fa fa-comment-o"></i> 23</a></span>
-									</div>
-								</div>
-							</article>
-							<article class="widget-post">
-								<div class="post-image">
-									<a href="post.html"><img src="images/90x60-4.jpg" alt=""></a>
-								</div>
-								<div class="post-body">
-									<h2><a href="post.html">Vintage-Inspired Finds for Your Home</a></h2>
-									<div class="post-meta">
-										<span><i class="fa fa-clock-o"></i> 2. august 2015</span> <span><a href="post.html"><i class="fa fa-comment-o"></i> 23</a></span>
-									</div>
-								</div>
-							</article>
-							<article class="widget-post">
-								<div class="post-image">
-									<a href="post.html"><img src="images/90x60-5.jpg" alt=""></a>
-								</div>
-								<div class="post-body">
-									<h2><a href="post.html">The State of the Word 2014</a></h2>
-									<div class="post-meta">
-										<span><i class="fa fa-clock-o"></i> 2. august 2015</span> <span><a href="post.html"><i class="fa fa-comment-o"></i> 23</a></span>
-									</div>
-								</div>
-							</article>
+								</article>
+								<?php
+							}
+						?>
 						</div>
 					</div>
 					<!-- sidebar-widget -->
@@ -224,9 +189,9 @@
 						<h3 class="sidebar-title">Visitanos</h3>
 						<div class="widget-container">
 							<div class="widget-socials">
-								<a href="#"><i class="fa fa-facebook"></i></a>
-								<a href="#"><i class="fa fa-youtube"></i></a>
-								<a href="#"><i class="fa fa-instagram"></i></a>
+								<a href="https://www.facebook.com/fepon.epn" target="_blank"><i class="fa fa-facebook"></i></a>
+								<a href="https://www.youtube.com/c/FEPON/videos" target="_blank"><i class="fa fa-youtube"></i></a>
+								<a href="https://www.instagram.com/fepon.epn/?hl=es" target="_blank"><i class="fa fa-instagram"></i></a>
 							</div>
 						</div>
 					</div>
@@ -234,13 +199,16 @@
 					<div class="sidebar-widget">
 						<h3 class="sidebar-title">Categorias</h3>
 						<div class="widget-container" style="text-align:center;">
-						<a class="btn btn-light" href="#" role="button">Noticias</a>
+						
+						<a class="btn btn-light" href="catalogo.php?ID=1" role="button">Noticias Generales</a>
 						<br>
-						<a class="btn btn-light" href="#" role="button">Ultimas Novedades</a>
+						<a class="btn btn-light"  href="catalogo.php?ID=2" role="button">Eventos del Periodico Academico</a>
 						<br>
-						<a class="btn btn-light" href="#" role="button">Polisegura</a>
+						<a class="btn btn-light"  href="catalogo.php?ID=3" role="button">Comunidad Politecnica</a>
 						<br>
-						<a class="btn btn-light" href="#" role="button">Preguntas Generales</a>
+						<a class="btn btn-light"  href="poliSegura.php" role="button">Polisegura</a>
+						<br>
+						<a class="btn btn-light" href="preguntasGenerales.php" role="button">Preguntas Generales</a>
 						<br>
 						</div>
 					</div>
@@ -255,16 +223,22 @@
 		<h3 class="sidebar-title">Visita Nuestras Secciones</h3>
 			<div class="row">
 				<div class="col-md-4"  style="text-align:center;">
-				<h3 style="text-align:center">INFORMACION</h3>
+				<a class="btn btn-light" href="#formulario-seccion" role="button">
+				<h3 style="text-align:center">CONTACTOS</h3>
 				<img style="width:80%;" src="images/informacion.gif" alt="Funny image">
+				</a>
 				</div>
 				<div class="col-md-4" style="text-align:center;">
+				<a class="btn btn-light" href="catalogo.php?ID=4" role="button">
 				<h3>NOTICIAS</h3>
 				<img style="width:80%; "src="images/noticias.gif" alt="Funny image">
+				</a>
 				</div>
 				<div class="col-md-4"  style="text-align:center;">
+				<a class="btn btn-light" href="preguntasGenerales.php" role="button">
 				<h3 style="text-align:center" >PREGUNTAS GENERALES</h3>
 				<img style="width:80%;" src="images/preguntas.gif" alt="Funny image">
+				</a>
 				</div>
 			</div>
 		</div>
@@ -273,7 +247,7 @@
 		<section style="background:#222; color:#EAEBEA;" id="formulario-seccion">	
 		<br>
 		<br>
-		<div class="container">
+		<div class="container" id="cajacontacto">
 			<div class="row">
                   <div class="col-md-6">
 				  <h2>Dejanos un mensaje</h2>
@@ -370,17 +344,15 @@
 		<footer class="footer">
 
 			<div class="footer-socials">
-				<a href="#"><i class="fa fa-facebook"></i></a>
-				<a href="#"><i class="fa fa-twitter"></i></a>
-				<a href="#"><i class="fa fa-instagram"></i></a>
-				<a href="#"><i class="fa fa-google-plus"></i></a>
-				<a href="#"><i class="fa fa-dribbble"></i></a>
-				<a href="#"><i class="fa fa-reddit"></i></a>
+				<a href="https://www.facebook.com/fepon.epn" target="_blank"><i class="fa fa-facebook"></i></a>
+				
+				<a href="https://www.instagram.com/fepon.epn/?hl=es" target="_blank"><i class="fa fa-instagram"></i></a>
+				<a href="https://www.youtube.com/c/FEPON/videos" target="_blank"><i class="fa fa-youtube"></i></a>
 			</div>
 
 			<div class="footer-bottom">
-				<i class="fa fa-copyright"></i> Copyright 2015. All rights reserved.<br>
-				Theme made by <a href="http://www.moozthemes.com">MOOZ Themes</a>
+				<i class="fa fa-copyright"></i> Copyright 2021. Todos los derechos reservados.<br>
+				Desarrollado por <a href="https://www.facebook.com/alejo.davidc/" target="_blank">David Cruz</a>
 			</div>
 		</footer>
 		<!-- Bootstrap core JavaScript
@@ -408,12 +380,33 @@
 			selectable: true,
 			events: 'eventos.php',
         	eventClick: function(info) { //actua sobre los eventos en el calendario
+				$('#videoEvento').empty();
+				$('#imagenEvento').empty();
+				
 				fechaHora= info.event.start.toISOString();
           		var fechaSeparada = fechaHora.split("T");
 				$('#tituloEvento').html(info.event.title);
 				$('#fechaEvento').html(fechaSeparada[0]);
 				$('#descripcionEvento').html(info.event.extendedProps.descripcion);
+				urlImageActual = info.event.extendedProps.imageurl;
+                    urlSeparado=urlImageActual.split(".");
+                    tipoArchivo =urlSeparado[urlSeparado.length - 1]
+                if(tipoArchivo=="mp4" || tipoArchivo=="avi"){
+                  //document.getElementById('imagenEvento').src=info.event.extendedProps.imageurl;
+                  $('#videoEvento').append('<video style="width:100%; max-width:500px; height:100%; max-height:500px;" controls><source src="'+urlImageActual+'" type="video/'+tipoArchivo+'"></video>');
+                  console.log("es video")
+                }else if(tipoArchivo== "jpeg"|| tipoArchivo== "jpeg"|| tipoArchivo== "png"|| tipoArchivo== "gif" || tipoArchivo== "jpg"){
+                  //info.event.extendedProps.imageurl
+                  $('#imagenEvento').html('<div style="text-align:center;"><img style="width:100%; max-width:500px; height:100%; max-height:500px;" src="'+urlImageActual+'"></div>');
+                     console.log("es imagen")
+                }
 				$('#imagenEvento').attr("src", info.event.extendedProps.imageurl);
+				if(info.event.extendedProps.entradaID){
+					$('#dirigeteEvento').html('<a type="button" class="btn" id="goPost" href="post.php?ID='+info.event.extendedProps.entradaID +'" style="background-color:#2B6C34 !important; color:#F4F6F6;">Informate</a>');
+				}else{
+					//$('#dirigeteEvento').html('No tiene link');
+				}
+				
 				$('#exampleEvento').modal('show');
 			}
 			});

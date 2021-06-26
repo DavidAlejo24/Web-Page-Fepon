@@ -3,7 +3,9 @@
 if (($_FILES["file"]["type"] == "image/pjpeg")
     || ($_FILES["file"]["type"] == "image/jpeg")
     || ($_FILES["file"]["type"] == "image/png")
-    || ($_FILES["file"]["type"] == "image/gif")) {
+    || ($_FILES["file"]["type"] == "image/gif")
+    || ($_FILES["file"]["type"] == "video/mp4")
+    || ($_FILES["file"]["type"] == "video/avi")) {
     if (move_uploaded_file($_FILES["file"]["tmp_name"], "images/stored/".$_FILES['file']['name'])) {
         //more code here...
         echo "images/stored/".$_FILES['file']['name'];

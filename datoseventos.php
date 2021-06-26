@@ -105,9 +105,10 @@ switch ($_GET['accion']) {
         $titulo = $_POST['titulo'];
         $descripcion = $_POST['descripcion'];
         $urlImagenTitulo = $_POST['urlImagenShow'];
+        $urlVideoTitulo = $_POST['urlVideoPrincipal'];
         $fecha_crea =  date("Y-m-d h:i:sa");
         $subcategoriaID =   $_POST['segmento'];
-        $insercion = "INSERT INTO `entradas` (`titulo`, `descripcion`, `urlImagenTitulo`, `fechaCreacion`, `subcategoriaID`) VALUES ('$titulo', '$descripcion','$urlImagenTitulo','$fecha_crea','$subcategoriaID')";
+        $insercion = "INSERT INTO `entradas` (`titulo`, `descripcion`, `urlImagenTitulo`, `fechaCreacion`, `subcategoriaID`, `urlVideoPrincipal`) VALUES ('$titulo', '$descripcion','$urlImagenTitulo','$fecha_crea','$subcategoriaID', '$urlVideoTitulo')";
         $resultado = mysqli_query( $conexion, $insercion );
         echo json_encode($resultado);   
         break;
@@ -128,6 +129,18 @@ switch ($_GET['accion']) {
         break;
     case 'obtenerPost':
         $consulta = "SELECT * FROM entradas WHERE ID = ".$_POST['id'];
+        $resultado = mysqli_query( $conexion, $consulta );
+        //echo json_encode($resultado);   
+        $spots = array();
+        while($spot = mysqli_fetch_assoc($resultado)){
+                $spots[] = $spot;
+                 
+        }
+        echo json_encode($spots);
+        break;
+    case 'obtenerPostPorSubcategoria':
+        $id= $_POST['id'];
+        $consulta = "SELECT ID, titulo, subcategoriaID FROM entradas WHERE subcategoriaID = $id ORDER BY ID DESC";
         $resultado = mysqli_query( $conexion, $consulta );
         //echo json_encode($resultado);   
         $spots = array();
@@ -175,6 +188,25 @@ switch ($_GET['accion']) {
             }
         }
         break;
+    case 'agregarVideoInterno':
+        if (($_FILES["file0"]["type"] == "video/mp4") //$_FILES['file']["name"]
+        || ($_FILES["file0"]["type"] == "video/avi")) {
+            if (move_uploaded_file($_FILES["file0"]["tmp_name"], "images/stored/externas/".$_FILES['file0']['name'])) {
+                echo "images/stored/externas/".$_FILES['file0']['name'];
+            } else {
+                echo 0;
+            }
+        } else {
+            echo 0;
+        }
+        break;
+    case 'eliminarVideoInterno':
+            //echo var_dump($_POST);
+            $urlImagen = $_POST["urlVideoPost"];
+            echo "video eliminado".$urlImagen;
+            //Eliminamos la imagen del servidor
+            unlink($urlImagen);
+        break;
         case 'agregarPhotoPostInternoModif':
             //echo var_dump($_POST);
             //echo var_dump($_FILES);
@@ -221,16 +253,72 @@ switch ($_GET['accion']) {
         $titulo = $_POST['titulo'];
         $contenido = $_POST['descripcion'];
         $urlImagenTitulo = $_POST['urlImagenTitulo'];
+        $urlVideoPrincipal = $_POST['urlVideoPrincipal'];
         $subcategoriaID = $_POST['subcategoriaID'];
         $fechaModif = date("Y-m-d h:i:sa");
-        $actualizacion = "UPDATE `entradas` SET titulo = '$titulo', descripcion = '$contenido', urlImagenTitulo='$urlImagenTitulo', fechaModificacion='$fechaModif', subcategoriaID='$subcategoriaID' WHERE ID = '$id'";
+        $actualizacion = "UPDATE `entradas` SET titulo = '$titulo', descripcion = '$contenido', urlImagenTitulo='$urlImagenTitulo', fechaModificacion='$fechaModif', subcategoriaID='$subcategoriaID', urlVideoPrincipal ='$urlVideoPrincipal' WHERE ID = '$id'";
         $resultado = mysqli_query( $conexion, $actualizacion );
         echo json_encode($resultado);
         break;
-
+    case 'agregarComentario':
+        $nombre = $_POST['nombre'];
+        $correo = $_POST['correo'];
+        $comentario = $_POST['mensaje'];
+        $entradaID = $_POST['entradaID'];
+        $estado = $_POST['estado'];
+        $fechaModif = date("Y-m-d h:i:sa");
+        $insercion = "INSERT INTO `comentarios` (`nombre`, `correo`, `mensaje`, `entradaID`, `estado`,`fechaCreacion`) VALUES ('$nombre', '$correo','$comentario','$entradaID','$estado','$fechaModif')";
+        $resultado = mysqli_query( $conexion, $insercion );
+        echo json_encode($resultado);
+        break;
+    case 'obtenerComentarios':
+        $consulta="SELECT * FROM comentarios";
+        $resultado= mysqli_query($conexion, $consulta);
+        //echo json_encode($resultado);  
+        $spots = array();
+        while($spot = mysqli_fetch_assoc($resultado)){
+                $spots[] = $spot;
+                 
+        }
+        echo json_encode($spots);
+        break;
+    case 'updateMensaje':
+        echo var_dump($_POST);
+        $idComentario = $_POST['idComentario'];
+        $actualizacion = "UPDATE `comentarios` SET estado = 'show' WHERE ID = $idComentario";
+        $resultado = mysqli_query( $conexion, $actualizacion );
+        echo json_encode($resultado);
+        break;
+    case 'ocultarMensaje':
+        echo var_dump($_POST);
+        $idComentario = $_POST['idComentario'];
+        $actualizacion = "UPDATE `comentarios` SET estado = 'oculto' WHERE ID = '$idComentario'";
+        $resultado = mysqli_query( $conexion, $actualizacion );
+        echo json_encode($resultado);
+        break;
+    case 'eliminarMensaje':
+        echo var_dump($_POST);
+        $idComentario = $_POST['idComentario'];
+        $eliminacion = "DELETE FROM `comentarios` WHERE ID='$idComentario'";
+        $respuesta = mysqli_query($conexion, $eliminacion);
+        echo json_encode($respuesta);
+        break;
+    case 'updateComentario':
+        echo var_dump($_POST);
+        $idComentario = $_POST['idComentario'];
+        $estado = $_POST['estado'];
+        $actualizacion = "UPDATE `comentarios` SET estado = '$estado' WHERE ID = '$idComentario'";
+        $resultado = mysqli_query( $conexion, $actualizacion );
+        echo json_encode($resultado);
+        break;
+    case 'conectarEventoPost':
+        $entradaID = $_POST['idPost'];
+        $idEvento = $_POST['idEvento'];
+        $actualizacion="UPDATE eventos SET entradaID = $entradaID WHERE ID = $idEvento";
+        $resultado = mysqli_query( $conexion, $actualizacion );
+        echo json_encode($resultado);
+        break;
 }   
-/*
-        
-*/
+
 ?>
 
